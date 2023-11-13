@@ -1,37 +1,17 @@
 from __future__ import annotations
 from typing import Optional, Any
-from . import auth as syn
+from .auth import Authentication
+from .synology_types import CreateDownloadTaskResponse, CreateDownloadTaskArgs
 
 
 class DownloadStation:
-
-    def __init__(self,
-                 ip_address: str,
-                 port: str,
-                 username: str,
-                 password: str,
-                 secure: bool = False,
-                 cert_verify: bool = False,
-                 dsm_version: int = 7,
-                 debug: bool = True,
-                 otp_code: Optional[str] = None,
-                 interactive_output: bool = True
-                 ) -> None:
-
-        self.session: syn.Authentication = syn.Authentication(ip_address, port, username, password, secure, cert_verify,
-                                                              dsm_version, debug, otp_code)
+    def __init__(self, auth: Authentication):
         self._bt_search_id: str = ''
         self._bt_search_id_list: list[str] = []
-        self.session.login('DownloadStation')
-        self.session.get_api_list('DownloadStation')
+        self.session = auth
 
         self.request_data: Any = self.session.request_data
         self.download_list: Any = self.session.app_api_list
-        self._sid: str = self.session.sid
-        self.base_url: str = self.session.base_url
-
-        self.interactive_output: bool = interactive_output
-        return
 
     def logout(self) -> None:
         self.session.logout('DownloadStation')
@@ -135,17 +115,9 @@ class DownloadStation:
 
         return self.request_data(api_name, api_path, req_param)
 
-    def create_task(self, uri, additional_param: Optional[dict[str, object]] = None) -> dict[str, object] | str:
-        api_name = 'SYNO.DownloadStation.Task'
-        info = self.download_list[api_name]
-        api_path = info['path']
-        req_param = {'version': info['maxVersion'], 'method': 'create', 'uri': uri}
-
-        if type(additional_param) is dict:
-            for key in additional_param.keys():
-                req_param[key] = additional_param[key]
-
-        return self.request_data(api_name, api_path, req_param)
+    def create_task(self, url: str, destination: str) -> CreateDownloadTaskResponse:
+        response = self.request_data(CreateDownloadTaskArgs(url, destination))
+        return CreateDownloadTaskResponse(response.json())
 
     def delete_task(self, task_id: str, force: bool = False) -> dict[str, object] | str:
         api_name = 'SYNO.DownloadStation.Task'
