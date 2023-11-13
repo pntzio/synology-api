@@ -21,4 +21,6 @@ from . import \
     usb_copy,\
     virtualization,\
     universal_search,\
-    snapshot
+    snapshot,\
+    synology
+
